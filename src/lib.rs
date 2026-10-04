@@ -4,7 +4,7 @@ mod base;
 pub use crate::base::*;
 
 /// A numeral.
-#[derive(Debug,Clone,Copy,PartialEq,Eq)]
+#[derive(Clone,Copy,PartialEq,Eq)]
 pub struct Numeral<'a>{
     value:[u8;1024],
     base:Base<'a>,
@@ -12,7 +12,7 @@ pub struct Numeral<'a>{
 }
 
 /// A numeral base.
-#[derive(Debug,Clone,Copy,PartialEq,Eq)]
+#[derive(Clone,Copy,PartialEq,Eq)]
 pub struct Base<'a>{pub(crate)base_alphabet:&'a[u8]}
 
 impl<'a>Base<'a>{
@@ -53,7 +53,7 @@ impl<'a>Base<'a>{
     /// ## Safety
     /// The bytes passed in must be valid UTF-8.
     /// ___
-    pub const unsafe fn to_str_unchecked(&self)->&str{
+    pub const unsafe fn as_str_unchecked(&self)->&str{
         unsafe{core::str::from_utf8_unchecked(self.base_alphabet)}
     }
 
@@ -143,6 +143,13 @@ impl<'a>Numeral<'a>{
     /// Returns the base of the numeral.
     pub const fn base(&self)->Base<'a>{
         Base{base_alphabet:self.base.base_alphabet}
+    }
+
+    /// Value of the numeral.
+    /// 
+    /// Returns a trimmed value byte slice (`&[u8]`) of the numeral.
+    pub const fn value(&self)->&[u8]{
+        self.trimmed_value()
     }
 
     /// New numeral.
@@ -238,6 +245,9 @@ impl<'a>Numeral<'a>{
         Numeral::new(trim_zeros(&result,DECIMAL),DECIMAL)
     }
 
+    /// Converted value as `u128`.
+    /// 
+    /// Convertes the value into decimal and returns it as `Some(u128)` if valid, returns `None` otherwise.
     pub const fn as_u128(&self)->Option<u128>{
         if self.is_empty(){return None}
         let decimal_numeral:Numeral=self.converted_to(DECIMAL);
