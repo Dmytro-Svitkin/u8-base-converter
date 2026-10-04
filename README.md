@@ -18,15 +18,15 @@ The crate revolves around two core types:
 | Decimal | `DECIMAL` | 10 | `0`-`9` |
 | Hexadecimal | `HEXADECIMAL` | 16 | `0`-`9`, `A`-`F` |
 | Alphanumeric Base62 | `ALPHANUMERIC` | 62 | `0`-`9`, `A`-`Z`, `a`-`z` |
-| Base64 | `ALPHANUMERIC` | 62 | `0`-`9`, `A`-`Z`, `a`-`z`, `+/` |
+| Base64 | `BASE64` | 64 | `0`-`9`, `A`-`Z`, `a`-`z`, `+/` |
 | Printable ASCII | `PRINTABLE_ASCII` | 95 | ASCII consecutively from ` ` to `~` |
 | Base256 | `BASE256` | 256 | All bytes |
 
 ```rust
 // Example Usage
 
-let morse_symbols: Base = MORSE;
-let base62: Base = ALPHANUMERIC;
+const morse_symbols: Base = MORSE;
+const base62: Base = ALPHANUMERIC;
 ```
 
 ### `Base` methods
@@ -77,6 +77,22 @@ println!("{}", str_hex.as_printable_ascii()); // "0123456789ABCDEF"
 | Numeral value as printable ASCII string slice | `value_as_printable_ascii` | Transforms the given numeral into a string slice all the way to the first non-printable-ASCII character | ╱ | `&str` numeral value |
 | Converted numeral | `converted_to` | Returns a converted numeral based on the given numeral value and base, returns an empty numeral in case of an overflow | `Base` | `Numeral` |
 | Converted numeral as `u128` | `as_u128` | Returns an `u128` value based on appropriately converted numeral | ╱ | `u128` value |
+
+```rust
+// Example Usage
+
+const base12_value: Numeral = Numeral::new(b"A1239", Base::from_radix(12));
+const bin_key: Numeral = Numeral::new_bin(b"011010010101010010101010");
+const hex_key: Numeral = bin_key.converted_to(HEXADECIMAL);
+const morse_message: Numeral = Numeral::from_str("-...../--..-..-....../...../--..-...-.", MORSE.as_str());
+const id: Numeral = Numeral::new_dec_from(129718946141235950);
+const readable_id: Numeral = id.converted_to(ALPHANUMERIC)
+
+println!("{:?}",base12_value.as_u128());
+println!("{:?}",hex_key.as_u128());
+println!("{:?}",morse_message.as_printable_ascii());
+println!("{:?}",readable_id.as_str());
+```
 
 ## Installation
 Add `u8-base-converter` to your `Cargo.toml` dependencies:
