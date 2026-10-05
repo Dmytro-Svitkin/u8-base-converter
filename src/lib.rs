@@ -5,8 +5,8 @@ pub use crate::base::*;
 
 /// A numeral.
 #[derive(Clone,Copy,PartialEq,Eq)]
-pub struct Numeral<'a>{
-    value:[u8;1024],
+pub struct Numeral<'a,const N:usize=1024>{
+    value:[u8;N],
     base:Base<'a>,
     start:usize
 }
@@ -123,12 +123,12 @@ impl<'a>Base<'a>{
     }
 }
 
-impl<'a>Numeral<'a>{
+impl<'a,const N:usize>Numeral<'a,N>{
     /// Length of the numeral.
     /// 
     /// Returns the number of digits of the numeral.
     pub const fn len(&self)->usize{
-        1024-self.start
+        N-self.start
     }
 
     /// Radix of the numeral's base.
@@ -160,7 +160,7 @@ impl<'a>Numeral<'a>{
     pub const fn new(value:&[u8],base:Base<'a>)->Self{
         let value:&[u8]=trim_zeros(value,base);
         let value_len:usize=value.len();
-        let mut new_value:[u8;1024]=[base.zero();1024];
+        let mut new_value:[u8;N]=[base.zero();N];
 
         let mut value_counter:usize=0;
 
@@ -173,13 +173,13 @@ impl<'a>Numeral<'a>{
                 base_counter+=1
             }
 
-            if legal_digit==false{return Self{value:new_value,base,start:1024}}
+            if legal_digit==false{return Self{value:new_value,base,start:N}}
             value_counter+=1
         }
 
-        if value_len==0{return Self{value:new_value,base,start:2024}}
+        if value_len==0{return Self{value:new_value,base,start:N}}
 
-        let offset:usize=1024-value_len;
+        let offset:usize=N-value_len;
         let mut counter:usize=0;
 
         while counter<value_len{
@@ -250,10 +250,10 @@ impl<'a>Numeral<'a>{
     /// Convertes the value into decimal and returns it as `Some(u128)` if valid, returns `None` otherwise.
     pub const fn as_u128(&self)->Option<u128>{
         if self.is_empty(){return None}
-        let decimal_numeral:Numeral=self.converted_to(DECIMAL);
+        let decimal_numeral:Numeral<N>=self.converted_to(DECIMAL);
         if decimal_numeral.len()>39{return None}
         let max_u128:Numeral=Numeral::new_dec_from_u128(u128::MAX);
-        let decimal_numeral_value:&[u8]=decimal_numeral.value.split_at(1024-39).1;
+        let decimal_numeral_value:&[u8]=decimal_numeral.value.split_at(N-39).1;
         let max_u128_value:&[u8]=max_u128.trimmed_value();
         let mut digit_counter:usize=0;
 
@@ -336,7 +336,7 @@ impl<'a>Numeral<'a>{
     /// 
     /// Returns `true` if the numeral is empty, returns `false` otherwise.
     pub const fn is_empty(&self)->bool{
-        self.start>1023
+        self.start>N-1
     }
 
     /// Numeral base converter.
@@ -345,10 +345,10 @@ impl<'a>Numeral<'a>{
     /// 
     /// Returns an empty value byte slice (`&[u8]`) in case of owerflow.
     pub const fn converted_to(&self,target_base:Base<'a>)->Self{
-        let mut source_value:[u8;1024]=self.value;
+        let mut source_value:[u8;N]=self.value;
 
-        let mut target_value:[u8;1024]=[target_base.zero();1024];
-        let mut target_start:usize=1024;
+        let mut target_value:[u8;N]=[target_base.zero();N];
+        let mut target_start:usize=N;
 
         let source_base:Base=self.base;
         let source_base_radix:usize=source_base.radix();
@@ -359,7 +359,7 @@ impl<'a>Numeral<'a>{
         else if target_base_radix==1{
             let Some(target_len)=self.as_u128()else{return Self{value:target_value,base:target_base,start:target_start}};
             let target_len:usize=target_len as usize;
-            if target_len<1025{target_start=1024-target_len;target_value=[target_base.zero();1024]}
+            if target_len<N+1{target_start=N-target_len;target_value=[target_base.zero();N]}
         }
         else if source_base_radix==1{
             return Numeral::new_dec_from_u128(self.len()as u128).converted_to(target_base)
@@ -370,7 +370,7 @@ impl<'a>Numeral<'a>{
                 let mut all_zero:bool=true;
                 let mut value_counter:usize=self.start;
 
-                while value_counter<1024{
+                while value_counter<N{
                     let digit_val:usize=digit_ix(source_value[value_counter],source_base);
                     let rcl:usize=carry*source_base_radix+digit_val;
 
@@ -383,7 +383,7 @@ impl<'a>Numeral<'a>{
                     value_counter+=1
                 }
 
-                if target_start==0{return Self{value:[target_base.zero();1024],base:target_base,start:1024}}
+                if target_start==0{return Self{value:[target_base.zero();N],base:target_base,start:N}}
 
                 target_start-=1;
                 target_value[target_start]=target_base.base_alphabet[carry];
